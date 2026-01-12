@@ -3,7 +3,7 @@ using System.Linq;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
     /// <summary>
     /// Cross-platform wrapper to represent channels for notifications.

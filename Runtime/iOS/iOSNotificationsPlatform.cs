@@ -4,7 +4,7 @@ using Unity.Notifications.iOS;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
     /// <summary>
     /// iOS implementation of <see cref="IGameNotificationsPlatform"/>.

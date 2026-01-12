@@ -4,7 +4,7 @@ using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
 	/// <summary>
 	/// This service allows to schedule and handle notifications on the current platform

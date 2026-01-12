@@ -2,7 +2,7 @@ using System;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
     /// <summary>
     /// Represents a notification that was scheduled with <see cref="GameNotificationsMonoBehaviour.ScheduleNotification"/>.

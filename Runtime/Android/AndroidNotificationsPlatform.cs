@@ -5,7 +5,7 @@ using Unity.Notifications.Android;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
     /// <summary>
     /// Android implementation of <see cref="IGameNotificationsPlatform"/>.

@@ -5,7 +5,7 @@ using UnityEngine.Assertions;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
     /// <summary>
     /// Android specific implementation of <see cref="IGameNotification"/>.

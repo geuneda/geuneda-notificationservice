@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
     /// <summary>
     /// iOS implementation of <see cref="IGameNotification"/>.

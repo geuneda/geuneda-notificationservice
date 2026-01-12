@@ -2,7 +2,7 @@ using System;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
     /// <summary>
     /// Represents a notification that will be delivered for this application.

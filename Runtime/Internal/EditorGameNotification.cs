@@ -2,7 +2,7 @@ using System;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
 	/// <summary>
 	/// Editor specific implementation of <see cref="IGameNotification"/>.

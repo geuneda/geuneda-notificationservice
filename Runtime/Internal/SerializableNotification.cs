@@ -2,7 +2,7 @@ using System;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.NotificationService
+namespace Geuneda.NotificationService
 {
 	/// <summary>
 	/// Notification to serialize/deserialize to disk when the game goes foreground
