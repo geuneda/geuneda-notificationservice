@@ -5,7 +5,7 @@ using System;
 namespace Geuneda.NotificationService
 {
 	/// <summary>
-	/// Editor specific implementation of <see cref="IGameNotification"/>.
+	/// <see cref="IGameNotification"/>의 에디터 전용 구현.
 	/// </summary>
 	internal class EditorGameNotification : IGameNotification
 	{

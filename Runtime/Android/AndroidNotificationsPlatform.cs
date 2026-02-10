@@ -8,7 +8,7 @@ using Unity.Notifications.Android;
 namespace Geuneda.NotificationService
 {
     /// <summary>
-    /// Android implementation of <see cref="IGameNotificationsPlatform"/>.
+    /// <see cref="IGameNotificationsPlatform"/>의 Android 구현.
     /// </summary>
     internal class AndroidNotificationsPlatform : IGameNotificationsPlatform<AndroidGameNotification>,
         IDisposable
@@ -17,13 +17,13 @@ namespace Geuneda.NotificationService
         public event Action<IGameNotification> NotificationReceived;
 
         /// <summary>
-        /// Gets or sets the default channel ID for notifications.
+        /// 알림의 기본 채널 ID를 가져오거나 설정합니다.
         /// </summary>
-        /// <value>The default channel ID for new notifications, or null.</value>
+        /// <value>새 알림의 기본 채널 ID, 또는 null.</value>
         public string DefaultChannelId { get; set; }
 
         /// <summary>
-        /// Instantiate a new instance of <see cref="AndroidNotificationsPlatform"/>.
+        /// <see cref="AndroidNotificationsPlatform"/>의 새 인스턴스를 생성합니다.
         /// </summary>
         public AndroidNotificationsPlatform()
         {
@@ -31,7 +31,7 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Registers the given <seealso cref="AndroidNotificationChannel"/> for the Android
+        /// 주어진 <seealso cref="AndroidNotificationChannel"/>을 Android에 등록합니다
         /// </summary>
         public void RegisterChannel(GameNotificationChannel notificationChannel)
         {
@@ -57,7 +57,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <remarks>
-        /// Will set the <see cref="AndroidGameNotification.Id"/> field of <paramref name="gameNotification"/>.
+        /// <paramref name="gameNotification"/>의 <see cref="AndroidGameNotification.Id"/> 필드를 설정합니다.
         /// </remarks>
         public void ScheduleNotification(AndroidGameNotification gameNotification)
         {
@@ -84,7 +84,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <remarks>
-        /// Will set the <see cref="AndroidGameNotification.Id"/> field of <paramref name="gameNotification"/>.
+        /// <paramref name="gameNotification"/>의 <see cref="AndroidGameNotification.Id"/> 필드를 설정합니다.
         /// </remarks>
         public void ScheduleNotification(IGameNotification gameNotification)
         {
@@ -104,7 +104,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <summary>
-        /// Create a new <see cref="AndroidGameNotification" />.
+        /// 새 <see cref="AndroidGameNotification" />을 생성합니다.
         /// </summary>
         public AndroidGameNotification CreateNotification()
         {
@@ -118,7 +118,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <summary>
-        /// Create a new <see cref="AndroidGameNotification" />.
+        /// 새 <see cref="AndroidGameNotification" />을 생성합니다.
         /// </summary>
         IGameNotification IGameNotificationsPlatform.CreateNotification()
         {
@@ -133,7 +133,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <summary>
-        /// Not currently implemented on Android
+        /// Android에서는 현재 구현되지 않음
         /// </summary>
         public void DismissNotification(int notificationId)
         {
@@ -153,28 +153,28 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Does nothing on Android.
+        /// Android에서는 아무 작업도 수행하지 않습니다.
         /// </summary>
         public void OnForeground() {}
 
         /// <summary>
-        /// Does nothing on Android.
+        /// Android에서는 아무 작업도 수행하지 않습니다.
         /// </summary>
         public void OnBackground() {}
 
         /// <summary>
-        /// Unregister delegates.
+        /// 델리게이트 등록을 해제합니다.
         /// </summary>
         public void Dispose()
         {
             AndroidNotificationCenter.OnNotificationReceived -= OnLocalNotificationReceived;
         }
 
-        // Event handler for receiving local notifications.
+        // 로컬 알림 수신을 위한 이벤트 핸들러.
         private void OnLocalNotificationReceived(AndroidNotificationIntentData data)
         {
-            // Create a new AndroidGameNotification out of the delivered notification, but only
-            // if the event is registered
+            // 전달된 알림으로 새 AndroidGameNotification을 생성하되,
+            // 이벤트가 등록된 경우에만 수행
             NotificationReceived?.Invoke(new AndroidGameNotification(data.Notification, data.Id, data.Channel));
         }
     }

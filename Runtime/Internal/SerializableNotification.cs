@@ -5,7 +5,7 @@ using System;
 namespace Geuneda.NotificationService
 {
 	/// <summary>
-	/// Notification to serialize/deserialize to disk when the game goes foreground
+	/// 게임이 포그라운드로 전환될 때 디스크에 직렬화/역직렬화할 알림
 	/// </summary>
 	[Serializable]
 	internal struct SerializableNotification
@@ -20,7 +20,7 @@ namespace Geuneda.NotificationService
 	}
 
 	/// <summary>
-	/// Converter serialization classes
+	/// 직렬화 변환 클래스
 	/// </summary>
 	internal static class SerializableNotificationConverter
 	{

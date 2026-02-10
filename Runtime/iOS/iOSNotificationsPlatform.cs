@@ -7,7 +7,7 @@ using Unity.Notifications.iOS;
 namespace Geuneda.NotificationService
 {
     /// <summary>
-    /// iOS implementation of <see cref="IGameNotificationsPlatform"/>.
+    /// <see cref="IGameNotificationsPlatform"/>의 iOS 구현.
     /// </summary>
     internal class iOSNotificationsPlatform : IGameNotificationsPlatform<iOSGameNotification>, IDisposable
     {
@@ -15,7 +15,7 @@ namespace Geuneda.NotificationService
         public event Action<IGameNotification> NotificationReceived;
 
         /// <summary>
-        /// Instantiate a new instance of <see cref="iOSNotificationsPlatform"/>.
+        /// <see cref="iOSNotificationsPlatform"/>의 새 인스턴스를 생성합니다.
         /// </summary>
         public iOSNotificationsPlatform()
         {
@@ -53,7 +53,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <summary>
-        /// Create a new <see cref="T:NotificationSamples.Android.AndroidNotification" />.
+        /// 새 <see cref="T:NotificationSamples.Android.AndroidNotification" />을 생성합니다.
         /// </summary>
         IGameNotification IGameNotificationsPlatform.CreateNotification()
         {
@@ -62,7 +62,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <summary>
-        /// Create a new <see cref="T:NotificationSamples.Android.AndroidNotification" />.
+        /// 새 <see cref="T:NotificationSamples.Android.AndroidNotification" />을 생성합니다.
         /// </summary>
         public iOSGameNotification CreateNotification()
         {
@@ -94,7 +94,7 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Clears badge count.
+        /// 배지 카운트를 초기화합니다.
         /// </summary>
         public void OnForeground()
         {
@@ -102,23 +102,23 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Does nothing on iOS.
+        /// iOS에서는 아무 작업도 수행하지 않습니다.
         /// </summary>
         public void OnBackground() {}
 
         /// <summary>
-        /// Unregister delegates.
+        /// 델리게이트 등록을 해제합니다.
         /// </summary>
         public void Dispose()
         {
             iOSNotificationCenter.OnNotificationReceived -= OnLocalNotificationReceived;
         }
 
-        // Event handler for receiving local notifications.
+        // 로컬 알림 수신을 위한 이벤트 핸들러.
         private void OnLocalNotificationReceived(iOSNotification notification)
         {
-            // Create a new AndroidGameNotification out of the delivered notification, but only
-            // if the event is registered
+            // 전달된 알림으로 새 AndroidGameNotification을 생성하되,
+            // 이벤트가 등록된 경우에만 수행
             NotificationReceived?.Invoke(new iOSGameNotification(notification));
         }
     }

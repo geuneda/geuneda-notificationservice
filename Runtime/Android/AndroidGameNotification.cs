@@ -8,20 +8,20 @@ using UnityEngine.Assertions;
 namespace Geuneda.NotificationService
 {
     /// <summary>
-    /// Android specific implementation of <see cref="IGameNotification"/>.
+    /// <see cref="IGameNotification"/>의 Android 전용 구현.
     /// </summary>
     public class AndroidGameNotification : IGameNotification
     {
         private AndroidNotification internalNotification;
 
         /// <summary>
-        /// Gets the internal notification object used by the mobile notifications system.
+        /// 모바일 알림 시스템에서 사용하는 내부 알림 객체를 가져옵니다.
         /// </summary>
         public AndroidNotification InternalNotification => internalNotification;
 
         /// <inheritdoc />
         /// <summary>
-        /// On Android, if the ID isn't explicitly set, it will be generated after it has been scheduled.
+        /// Android에서 ID가 명시적으로 설정되지 않은 경우 예약 후 자동으로 생성됩니다.
         /// </summary>
         public int? Id { get; set; }
 
@@ -32,16 +32,16 @@ namespace Geuneda.NotificationService
         public string Body { get => InternalNotification.Text; set => internalNotification.Text = value; }
 
         /// <summary>
-        /// Does nothing on Android.
+        /// Android에서는 아무 작업도 수행하지 않습니다.
         /// </summary>
         public string Subtitle { get => null; set {} }
 
         /// <inheritdoc />
         /// <remarks>
-        /// On Android, this represents the notification's channel, and is required. Will be configured automatically by
-        /// <see cref="AndroidNotificationsPlatform"/> if <see cref="AndroidNotificationsPlatform.DefaultChannelId"/> is set
+        /// Android에서는 알림의 채널을 나타내며 필수입니다. <see cref="AndroidNotificationsPlatform.DefaultChannelId"/>가 설정된 경우
+        /// <see cref="AndroidNotificationsPlatform"/>에 의해 자동으로 구성됩니다
         /// </remarks>
-        /// <value>The value of <see cref="DeliveredChannel"/>.</value>
+        /// <value><see cref="DeliveredChannel"/>의 값.</value>
         public string Channel { get => DeliveredChannel; set => DeliveredChannel = value; }
 
         /// <inheritdoc />
@@ -66,7 +66,7 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Gets or sets the channel for this notification.
+        /// 이 알림의 채널을 가져오거나 설정합니다.
         /// </summary>
         public string DeliveredChannel { get; set; }
 
@@ -80,7 +80,7 @@ namespace Geuneda.NotificationService
         public string LargeIcon { get => InternalNotification.LargeIcon; set => internalNotification.LargeIcon = value; }
 
         /// <summary>
-        /// Instantiate a new instance of <see cref="AndroidGameNotification"/>.
+        /// <see cref="AndroidGameNotification"/>의 새 인스턴스를 생성합니다.
         /// </summary>
         public AndroidGameNotification()
         {
@@ -88,11 +88,11 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Instantiate a new instance of <see cref="AndroidGameNotification"/> from a delivered notification
+        /// 전달된 알림으로부터 <see cref="AndroidGameNotification"/>의 새 인스턴스를 생성합니다
         /// </summary>
-        /// <param name="deliveredNotification">The notification that has been delivered.</param>
-        /// <param name="deliveredId">The ID of the delivered notification.</param>
-        /// <param name="deliveredChannel">The channel the notification was delivered to.</param>
+        /// <param name="deliveredNotification">전달된 알림.</param>
+        /// <param name="deliveredId">전달된 알림의 ID.</param>
+        /// <param name="deliveredChannel">알림이 전달된 채널.</param>
         internal AndroidGameNotification(AndroidNotification deliveredNotification, int deliveredId,
                                          string deliveredChannel)
         {
@@ -102,7 +102,7 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Set the scheduled flag.
+        /// 예약 완료 플래그를 설정합니다.
         /// </summary>
         internal void OnScheduled()
         {

@@ -6,110 +6,110 @@ using System.Linq;
 namespace Geuneda.NotificationService
 {
     /// <summary>
-    /// Cross-platform wrapper to represent channels for notifications.
+    /// 알림 채널을 나타내는 크로스 플랫폼 래퍼.
     /// </summary>
     /// <remarks>
-    /// <para>On Android, this maps pretty closely to Android Notification Channels. On iOS, this does nothing.</para>
-    /// <para>For projects targeting Android, you need to have at least one channel.</para>
+    /// <para>Android에서는 Android 알림 채널에 거의 직접 매핑됩니다. iOS에서는 아무 작업도 수행하지 않습니다.</para>
+    /// <para>Android를 대상으로 하는 프로젝트에서는 최소한 하나의 채널이 필요합니다.</para>
     /// </remarks>
     public readonly struct GameNotificationChannel
     {
         /// <summary>
-        /// The style of notification shown for this channel. Corresponds to the Importance setting of
-        /// an Android notification, and do nothing on iOS.
+        /// 이 채널에 표시되는 알림 스타일. Android 알림의 중요도 설정에 해당하며,
+        /// iOS에서는 아무 작업도 수행하지 않습니다.
         /// </summary>
         public enum NotificationStyle
         {
             /// <summary>
-            /// Notification does not appear in the status bar.
+            /// 알림이 상태 표시줄에 나타나지 않습니다.
             /// </summary>
             None = 0,
             /// <summary>
-            /// Notification makes no sound.
+            /// 알림이 소리를 내지 않습니다.
             /// </summary>
             NoSound = 2,
             /// <summary>
-            /// Notification plays sound.
+            /// 알림이 소리를 재생합니다.
             /// </summary>
             Default = 3,
             /// <summary>
-            /// Notification also displays a heads-up popup.
+            /// 알림이 헤드업 팝업도 표시합니다.
             /// </summary>
             Popup = 4
         }
 
         /// <summary>
-        /// Controls how notifications display on the device lock screen.
+        /// 기기 잠금 화면에서 알림이 표시되는 방식을 제어합니다.
         /// </summary>
         public enum PrivacyMode
         {
             /// <summary>
-            /// Notifications aren't shown on secure lock screens.
+            /// 보안 잠금 화면에서 알림이 표시되지 않습니다.
             /// </summary>
             Secret = -1,
             /// <summary>
-            /// Notifications display an icon, but content is concealed on secure lock screens.
+            /// 알림이 아이콘을 표시하지만, 보안 잠금 화면에서는 내용이 숨겨집니다.
             /// </summary>
             Private = 0,
             /// <summary>
-            /// Notifications display on all lock screens.
+            /// 알림이 모든 잠금 화면에 표시됩니다.
             /// </summary>
             Public
         }
 
         /// <summary>
-        /// The identifier for the channel.
+        /// 채널의 식별자.
         /// </summary>
         public readonly string Id;
 
         /// <summary>
-        /// The name of the channel as displayed to the user.
+        /// 사용자에게 표시되는 채널 이름.
         /// </summary>
         public readonly string Name;
 
         /// <summary>
-        /// The description of the channel as displayed to the user.
+        /// 사용자에게 표시되는 채널 설명.
         /// </summary>
         public readonly string Description;
 
         /// <summary>
-        /// A flag determining whether messages on this channel can show a badge. Defaults to true.
+        /// 이 채널의 메시지가 배지를 표시할 수 있는지 여부를 결정하는 플래그. 기본값은 true.
         /// </summary>
         public readonly bool ShowsBadge;
 
         /// <summary>
-        /// A flag determining whether messages on this channel cause the device light to flash. Defaults to false.
+        /// 이 채널의 메시지가 기기 조명을 깜빡이게 하는지 여부를 결정하는 플래그. 기본값은 false.
         /// </summary>
         public readonly bool ShowLights;
 
         /// <summary>
-        /// A flag determining whether messages on this channel cause the device to vibrate. Defaults to true.
+        /// 이 채널의 메시지가 기기를 진동시키는지 여부를 결정하는 플래그. 기본값은 true.
         /// </summary>
         public readonly bool Vibrates;
 
         /// <summary>
-        /// A flag determining whether messages on this channel bypass do not disturb settings. Defaults to false.
+        /// 이 채널의 메시지가 방해 금지 설정을 우회하는지 여부를 결정하는 플래그. 기본값은 false.
         /// </summary>
         public readonly bool HighPriority;
 
         /// <summary>
-        /// The display style for this notification. Defaults to <see cref="NotificationStyle.Popup"/>.
+        /// 이 알림의 표시 스타일. 기본값은 <see cref="NotificationStyle.Popup"/>.
         /// </summary>
         public readonly NotificationStyle Style;
 
         /// <summary>
-        /// The privacy setting for this notification. Defaults to <see cref="PrivacyMode.Public"/>.
+        /// 이 알림의 개인정보 설정. 기본값은 <see cref="PrivacyMode.Public"/>.
         /// </summary>
         public readonly PrivacyMode Privacy;
 
         /// <summary>
-        /// The custom vibration pattern for this channel. Set to null to use the default.
+        /// 이 채널의 사용자 정의 진동 패턴. 기본값을 사용하려면 null로 설정.
         /// </summary>
         public readonly int[] VibrationPattern;
 
         /// <summary>
-        /// Initialize a new instance of <see cref="GameNotificationChannel"/> with
-        /// optional fields set to their default values.
+        /// 선택적 필드를 기본값으로 설정하여 <see cref="GameNotificationChannel"/>의
+        /// 새 인스턴스를 초기화합니다.
         /// </summary>
         public GameNotificationChannel(string id, string name, string description) : this()
         {
@@ -127,8 +127,8 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Initialize a new instance of <see cref="GameNotificationChannel"/>, providing the notification style
-        /// and optionally all other settings.
+        /// 알림 스타일과 선택적으로 기타 모든 설정을 제공하여 <see cref="GameNotificationChannel"/>의
+        /// 새 인스턴스를 초기화합니다.
         /// </summary>
         public GameNotificationChannel(string id, string name, string description, NotificationStyle style, bool showsBadge = true, bool showLights = false, bool vibrates = true, bool highPriority = false, PrivacyMode privacy = PrivacyMode.Public, long[] vibrationPattern = null)
         {

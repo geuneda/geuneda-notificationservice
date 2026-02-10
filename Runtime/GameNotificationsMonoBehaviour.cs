@@ -8,88 +8,86 @@ using UnityEngine;
 namespace Geuneda.NotificationService
 {
     /// <summary>
-    /// The operating modes for the notifications manager
+    /// 알림 관리자의 동작 모드
     /// </summary>
     [Flags]
     public enum OperatingMode
     {
         /// <summary>
-        /// Do not perform any queueing at all. All notifications are scheduled with the operating system
-        /// immediately.
+        /// 큐잉을 전혀 수행하지 않습니다. 모든 알림이 운영 체제에 즉시 예약됩니다.
         /// </summary>
         NoQueue = 0x00,
 
         /// <summary>
         /// <para>
-        /// Queue messages that are scheduled with this manager.
-        /// No messages will be sent to the operating system until the application is backgrounded.
+        /// 이 관리자로 예약된 메시지를 큐에 넣습니다.
+        /// 애플리케이션이 백그라운드로 전환될 때까지 운영 체제에 메시지가 전송되지 않습니다.
         /// </para>
         /// <para>
-        /// If badge numbers are not set, will automatically increment them. This will only happen if NO badge numbers
-        /// for pending notifications are ever set.
+        /// 배지 번호가 설정되지 않은 경우 자동으로 증가시킵니다. 이는 대기 중인 알림에
+        /// 배지 번호가 한 번도 설정되지 않은 경우에만 발생합니다.
         /// </para>
         /// </summary>
         Queue = 0x01,
 
         /// <summary>
-        /// When the application is foregrounded, clear all pending notifications.
+        /// 애플리케이션이 포그라운드로 전환될 때 모든 대기 중인 알림을 지웁니다.
         /// </summary>
         ClearOnForegrounding = 0x02,
 
         /// <summary>
-        /// After clearing events, will put future ones back into the queue if they are marked with <see cref="PendingNotification.Reschedule"/>.
+        /// 이벤트를 지운 후 <see cref="PendingNotification.Reschedule"/>로 표시된 미래의 이벤트를 큐에 다시 넣습니다.
         /// </summary>
         /// <remarks>
-        /// Only valid if <see cref="ClearOnForegrounding"/> is also set.
+        /// <see cref="ClearOnForegrounding"/>도 설정된 경우에만 유효합니다.
         /// </remarks>
         RescheduleAfterClearing = 0x04,
 
         /// <summary>
-        /// Combines the behaviour of <see cref="Queue"/> and <see cref="ClearOnForegrounding"/>.
+        /// <see cref="Queue"/>와 <see cref="ClearOnForegrounding"/>의 동작을 결합합니다.
         /// </summary>
         QueueAndClear = Queue | ClearOnForegrounding,
 
         /// <summary>
         /// <para>
-        /// Combines the behaviour of <see cref="Queue"/>, <see cref="ClearOnForegrounding"/> and
-        /// <see cref="RescheduleAfterClearing"/>.
+        /// <see cref="Queue"/>, <see cref="ClearOnForegrounding"/>,
+        /// <see cref="RescheduleAfterClearing"/>의 동작을 결합합니다.
         /// </para>
         /// <para>
-        /// Ensures that messages will never be displayed while the application is in the foreground.
+        /// 애플리케이션이 포그라운드에 있는 동안 메시지가 표시되지 않도록 보장합니다.
         /// </para>
         /// </summary>
         QueueClearAndReschedule = Queue | ClearOnForegrounding | RescheduleAfterClearing,
     }
         
     /// <summary>
-    /// Global notifications manager that serves as a wrapper for multiple platforms' notification systems.
+    /// 여러 플랫폼의 알림 시스템에 대한 래퍼 역할을 하는 글로벌 알림 관리자입니다.
     /// </summary>
     public sealed class GameNotificationsMonoBehaviour : MonoBehaviour
     {
         
         
-        // Minimum amount of time that a notification should be into the future before it's queued when we background.
+        // 백그라운드로 전환 시 알림이 큐에 추가되기 위해 미래 시점이어야 하는 최소 시간
         private static readonly TimeSpan _minimumNotificationTime = new TimeSpan(0, 0, 2);
 
         /// <summary>
-        /// The operating mode for the notifications manager
+        /// 알림 관리자의 동작 모드
         /// </summary>
         public OperatingMode Mode = OperatingMode.NoQueue;
 
         /// <summary>
-        /// Check to make the notifications manager automatically set badge numbers so that they increment.
-        /// Schedule notifications with no numbers manually set to make use of this feature.
+        /// 알림 관리자가 배지 번호를 자동으로 증가시키도록 설정합니다.
+        /// 이 기능을 사용하려면 번호를 수동으로 설정하지 않고 알림을 예약하세요.
         /// </summary>
         public bool AutoBadging = true;
 
         /// <summary>
-        /// Event fired when a scheduled local notification is delivered while the app is in the foreground.
+        /// 앱이 포그라운드에 있는 동안 예약된 로컬 알림이 전달될 때 발생하는 이벤트입니다.
         /// </summary>
         public Action<PendingNotification> OnLocalNotificationDelivered;
 
         /// <summary>
-        /// Event fired when a queued local notification is cancelled because the application is in the foreground
-        /// when it was meant to be displayed.
+        /// 표시되어야 할 시점에 애플리케이션이 포그라운드에 있어서 큐에 있는 로컬 알림이 취소될 때 발생하는 이벤트입니다.
         /// </summary>
         /// <seealso cref="OperatingMode.Queue"/>
         public Action<PendingNotification> OnLocalNotificationExpired;
@@ -98,17 +96,17 @@ namespace Geuneda.NotificationService
         private bool _inForeground = true;
 
         /// <summary>
-        /// Gets a collection of notifications that are scheduled or queued.
+        /// 예약되었거나 큐에 있는 알림 컬렉션을 가져옵니다.
         /// </summary>
         public List<PendingNotification> PendingNotifications { get; private set; } = new List<PendingNotification>();
 
         /// <summary>
-        /// Gets whether this manager has been initialized.
+        /// 이 관리자가 초기화되었는지 여부를 가져옵니다.
         /// </summary>
         public bool Initialized { get; private set; }
 
         /// <summary>
-        /// Clean up platform object if necessary
+        /// 필요한 경우 플랫폼 객체를 정리합니다
         /// </summary>
         private void OnDestroy()
         {
@@ -127,7 +125,7 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Check pending list for expired notifications, when in queue mode.
+        /// 큐 모드일 때 대기 목록에서 만료된 알림을 확인합니다.
         /// </summary>
         private void Update()
         {
@@ -136,7 +134,7 @@ namespace Geuneda.NotificationService
                 return;
             }
 
-            // Check each pending notification for expiry, then remove it
+            // 각 대기 중인 알림의 만료 여부를 확인한 후 제거
             for (int i = PendingNotifications.Count - 1; i >= 0; --i)
             {
                 PendingNotification queuedNotification = PendingNotifications[i];
@@ -150,7 +148,7 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Respond to application foreground/background events.
+        /// 애플리케이션 포그라운드/백그라운드 이벤트에 응답합니다.
         /// </summary>
         private void OnApplicationFocus(bool hasFocus)
         {
@@ -170,21 +168,21 @@ namespace Geuneda.NotificationService
 
             _platform.OnBackground();
 
-            // Backgrounding. Queue future dated notifications
+            // 백그라운드 전환. 미래 날짜의 알림을 큐에 추가
             if ((Mode & OperatingMode.Queue) == OperatingMode.Queue)
             {
-                // Filter out past events
+                // 과거 이벤트 필터링
                 for (var i = PendingNotifications.Count - 1; i >= 0; i--)
                 {
                     PendingNotification pendingNotification = PendingNotifications[i];
-                    // Ignore already scheduled ones
+                    // 이미 예약된 알림은 무시
                     if (pendingNotification.Notification.Scheduled)
                     {
                         continue;
                     }
 
-                    // If a non-scheduled notification is in the past (or not within our threshold)
-                    // just remove it immediately
+                    // 예약되지 않은 알림이 과거이거나 (또는 임계값 이내가 아닌 경우)
+                    // 즉시 제거
                     if (pendingNotification.Notification.DeliveryTime != null &&
                         pendingNotification.Notification.DeliveryTime - DateTime.Now < _minimumNotificationTime)
                     {
@@ -192,7 +190,7 @@ namespace Geuneda.NotificationService
                     }
                 }
 
-                // Sort notifications by delivery time, if no notifications have a badge number set
+                // 배지 번호가 설정된 알림이 없는 경우 전달 시간순으로 알림을 정렬
                 bool noBadgeNumbersSet =
                     PendingNotifications.All(notification => notification.Notification.BadgeNumber == null);
 
@@ -213,7 +211,7 @@ namespace Geuneda.NotificationService
                         return a.Notification.DeliveryTime.Value.CompareTo(b.Notification.DeliveryTime.Value);
                     });
 
-                    // Set badge numbers incrementally
+                    // 배지 번호를 순차적으로 설정
                     var badgeNum = 1;
                     foreach (var pendingNotification in PendingNotifications)
                     {
@@ -228,17 +226,17 @@ namespace Geuneda.NotificationService
                 for (int i = PendingNotifications.Count - 1; i >= 0; i--)
                 {
                     var pendingNotification = PendingNotifications[i];
-                    // Ignore already scheduled ones
+                    // 이미 예약된 알림은 무시
                     if (pendingNotification.Notification.Scheduled)
                     {
                         continue;
                     }
 
-                    // Schedule it now
+                    // 지금 예약
                     _platform.ScheduleNotification(pendingNotification.Notification);
                 }
 
-                // Clear badge numbers again (for saving)
+                // 배지 번호를 다시 지움 (저장용)
                 if (noBadgeNumbersSet && AutoBadging)
                 {
                     foreach (var pendingNotification in PendingNotifications)
@@ -251,12 +249,12 @@ namespace Geuneda.NotificationService
                 }
             }
 
-            // Calculate notifications to save
+            // 저장할 알림 계산
             var notificationsToSave = new List<SerializableNotification>(PendingNotifications.Count);
             foreach (var pendingNotification in PendingNotifications)
             {
-                // If we're in clear mode, add nothing unless we're in rescheduling mode
-                // Otherwise add everything
+                // 클리어 모드인 경우 재예약 모드가 아니면 아무것도 추가하지 않음
+                // 그 외에는 모두 추가
                 if ((Mode & OperatingMode.ClearOnForegrounding) == OperatingMode.ClearOnForegrounding)
                 {
                     if ((Mode & OperatingMode.RescheduleAfterClearing) != OperatingMode.RescheduleAfterClearing)
@@ -264,8 +262,8 @@ namespace Geuneda.NotificationService
                         continue;
                     }
 
-                    // In reschedule mode, add ones that have been scheduled, are marked for
-                    // rescheduling, and that have a time
+                    // 재예약 모드에서는 예약되었고, 재예약으로 표시되었으며,
+                    // 시간이 설정된 알림을 추가
                     if (pendingNotification.Reschedule &&
                         pendingNotification.Notification.Scheduled &&
                         pendingNotification.Notification.DeliveryTime.HasValue)
@@ -275,7 +273,7 @@ namespace Geuneda.NotificationService
                 }
                 else
                 {
-                    // In non-clear mode, just add all scheduled notifications
+                    // 비클리어 모드에서는 예약된 모든 알림을 추가
                     if (pendingNotification.Notification.Scheduled)
                     {
                         notificationsToSave.Add(pendingNotification.AsSerializableNotification());
@@ -283,15 +281,15 @@ namespace Geuneda.NotificationService
                 }
             }
 
-            // Save to disk
+            // 디스크에 저장
             PlayerPrefs.SetString("notifications", JsonUtility.ToJson(notificationsToSave));
         }
 
         /// <summary>
-        /// Initialize the notifications manager.
+        /// 알림 관리자를 초기화합니다.
         /// </summary>
-        /// <param name="channels">An optional collection of channels to register, for Android</param>
-        /// <exception cref="InvalidOperationException"><see cref="Initialize"/> has already been called.</exception>
+        /// <param name="channels">Android용으로 등록할 선택적 채널 컬렉션</param>
+        /// <exception cref="InvalidOperationException"><see cref="Initialize"/>가 이미 호출된 경우.</exception>
         public void Initialize(params GameNotificationChannel[] channels)
         {
             if (Initialized)
@@ -304,7 +302,7 @@ namespace Geuneda.NotificationService
 #if UNITY_ANDROID
             _platform = new AndroidNotificationsPlatform();
 
-            // Register the notification channels
+            // 알림 채널 등록
             var doneDefault = false;
             foreach (var notificationChannel in channels)
             {
@@ -333,10 +331,10 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Creates a new notification object for the current platform.
+        /// 현재 플랫폼에 대한 새 알림 객체를 생성합니다.
         /// </summary>
-        /// <returns>The new notification, ready to be scheduled, or null if there's no valid platform.</returns>
-        /// <exception cref="InvalidOperationException"><see cref="Initialize"/> has not been called.</exception>
+        /// <returns>예약할 준비가 된 새 알림, 또는 유효한 플랫폼이 없는 경우 null.</returns>
+        /// <exception cref="InvalidOperationException"><see cref="Initialize"/>가 호출되지 않은 경우.</exception>
         public IGameNotification CreateNotification()
         {
             if (!Initialized)
@@ -348,9 +346,9 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Schedules a notification to be delivered.
+        /// 알림 전달을 예약합니다.
         /// </summary>
-        /// <param name="notification">The notification to deliver.</param>
+        /// <param name="notification">전달할 알림.</param>
         public PendingNotification ScheduleNotification(IGameNotification notification)
         {
             if (!Initialized)
@@ -363,19 +361,19 @@ namespace Geuneda.NotificationService
                 return null;
             }
 
-            // If we queue, don't schedule immediately.
-            // Also immediately schedule non-time based deliveries (for iOS)
+            // 큐 모드이면 즉시 예약하지 않음.
+            // 또한 시간 기반이 아닌 전달은 즉시 예약 (iOS용)
             if ((Mode & OperatingMode.Queue) != OperatingMode.Queue || notification.DeliveryTime == null)
             {
                 _platform?.ScheduleNotification(notification);
             }
             else if (!notification.Id.HasValue)
             {
-                // Generate an ID for items that don't have one (just so they can be identified later)
+                // ID가 없는 항목에 대해 ID를 생성 (나중에 식별할 수 있도록)
                 notification.Id = Math.Abs(DateTime.Now.ToString("yyMMddHHmmssffffff").GetHashCode());
             }
 
-            // Register pending notification
+            // 대기 중인 알림 등록
             var result = new PendingNotification(notification);
             PendingNotifications.Add(result);
 
@@ -383,10 +381,10 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Cancels a scheduled notification.
+        /// 예약된 알림을 취소합니다.
         /// </summary>
-        /// <param name="notificationId">The ID of the notification to cancel.</param>
-        /// <exception cref="InvalidOperationException"><see cref="Initialize"/> has not been called.</exception>
+        /// <param name="notificationId">취소할 알림의 ID.</param>
+        /// <exception cref="InvalidOperationException"><see cref="Initialize"/>가 호출되지 않은 경우.</exception>
         public void CancelNotification(int notificationId)
         {
             if (!Initialized)
@@ -401,7 +399,7 @@ namespace Geuneda.NotificationService
 
             _platform.CancelNotification(notificationId);
 
-            // Remove the cancelled notification from scheduled list
+            // 예약 목록에서 취소된 알림을 제거
             var index = PendingNotifications.FindIndex(scheduledNotification =>
                 scheduledNotification.Notification.Id == notificationId);
 
@@ -412,9 +410,9 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Cancels all scheduled notifications.
+        /// 모든 예약된 알림을 취소합니다.
         /// </summary>
-        /// <exception cref="InvalidOperationException"><see cref="Initialize"/> has not been called.</exception>
+        /// <exception cref="InvalidOperationException"><see cref="Initialize"/>가 호출되지 않은 경우.</exception>
         public void CancelAllNotifications()
         {
             if (!Initialized)
@@ -433,10 +431,10 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Dismisses a displayed notification.
+        /// 표시된 알림을 닫습니다.
         /// </summary>
-        /// <param name="notificationId">The ID of the notification to dismiss.</param>
-        /// <exception cref="InvalidOperationException"><see cref="Initialize"/> has not been called.</exception>
+        /// <param name="notificationId">닫을 알림의 ID.</param>
+        /// <exception cref="InvalidOperationException"><see cref="Initialize"/>가 호출되지 않은 경우.</exception>
         public void DismissNotification(int notificationId)
         {
             if (!Initialized)
@@ -448,9 +446,9 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Dismisses all displayed notifications.
+        /// 모든 표시된 알림을 닫습니다.
         /// </summary>
-        /// <exception cref="InvalidOperationException"><see cref="Initialize"/> has not been called.</exception>
+        /// <exception cref="InvalidOperationException"><see cref="Initialize"/>가 호출되지 않은 경우.</exception>
         public void DismissAllNotifications()
         {
             if (!Initialized)
@@ -462,17 +460,17 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Event fired by <see cref="_platform"/> when a notification is received.
+        /// <see cref="_platform"/>에서 알림이 수신될 때 발생하는 이벤트입니다.
         /// </summary>
         private void OnNotificationReceived(IGameNotification deliveredNotification)
         {
-            // Ignore for background messages (this happens on Android sometimes)
+            // 백그라운드 메시지는 무시 (Android에서 가끔 발생)
             if (!_inForeground)
             {
                 return;
             }
 
-            // Find in pending list
+            // 대기 목록에서 찾기
             int deliveredIndex = PendingNotifications.FindIndex(
                 scheduledNotification => scheduledNotification.Notification.Id == deliveredNotification.Id);
             
@@ -483,28 +481,28 @@ namespace Geuneda.NotificationService
             }
         }
 
-        // Clear foreground notifications and reschedule stuff from a file
+        // 포그라운드 알림을 지우고 파일에서 항목을 재예약
         private void OnForegrounding()
         {
             PendingNotifications.Clear();
             _platform.OnForeground();
 
-            // Deserialize saved items
+            // 저장된 항목 역직렬화
             var notifications = JsonUtility.FromJson<List<SerializableNotification>>(PlayerPrefs.GetString("notifications"));
 
-            // Foregrounding
+            // 포그라운드 전환
             if ((Mode & OperatingMode.ClearOnForegrounding) == OperatingMode.ClearOnForegrounding)
             {
-                // Clear on foregrounding
+                // 포그라운드 전환 시 지우기
                 _platform.CancelAllScheduledNotifications();
 
-                // Only reschedule in reschedule mode, and if we loaded any items
+                // 재예약 모드이고 로드된 항목이 있는 경우에만 재예약
                 if (notifications == null || (Mode & OperatingMode.RescheduleAfterClearing) != OperatingMode.RescheduleAfterClearing)
                 {
                     return;
                 }
 
-                // Reschedule notifications from deserialization
+                // 역직렬화된 알림을 재예약
                 foreach (var savedNotification in notifications)
                 {
                     if (savedNotification.DeliveryTime > DateTime.Now)
@@ -517,8 +515,8 @@ namespace Geuneda.NotificationService
             }
             else
             {
-                // Just create PendingNotification wrappers for all deserialized items.
-                // We're not rescheduling them because they were not cleared
+                // 역직렬화된 모든 항목에 대해 PendingNotification 래퍼를 생성.
+                // 지워지지 않았으므로 재예약하지 않음
                 if (notifications == null)
                 {
                     return;

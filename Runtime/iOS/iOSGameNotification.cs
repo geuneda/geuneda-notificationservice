@@ -9,22 +9,22 @@ using UnityEngine.Assertions;
 namespace Geuneda.NotificationService
 {
     /// <summary>
-    /// iOS implementation of <see cref="IGameNotification"/>.
+    /// <see cref="IGameNotification"/>의 iOS 구현.
     /// </summary>
     public class iOSGameNotification : IGameNotification
     {
         private readonly iOSNotification internalNotification;
 
         /// <summary>
-        /// Gets the internal notification object used by the mobile notifications system.
+        /// 모바일 알림 시스템에서 사용하는 내부 알림 객체를 가져옵니다.
         /// </summary>
         public iOSNotification InternalNotification => internalNotification;
 
         /// <inheritdoc />
         /// <remarks>
-        /// Internally stored as a string. Gets parsed to an integer when retrieving.
+        /// 내부적으로 문자열로 저장됩니다. 조회 시 정수로 파싱됩니다.
         /// </remarks>
-        /// <value>The identifier as an integer, or null if the identifier couldn't be parsed as a number.</value>
+        /// <value>정수 형태의 식별자, 또는 식별자를 숫자로 파싱할 수 없는 경우 null.</value>
         public int? Id
         {
             get
@@ -59,9 +59,9 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <remarks>
-        /// On iOS, this represents the notification's Category Identifier.
+        /// iOS에서는 알림의 카테고리 식별자를 나타냅니다.
         /// </remarks>
-        /// <value>The value of <see cref="CategoryIdentifier"/>.</value>
+        /// <value><see cref="CategoryIdentifier"/>의 값.</value>
         public string Channel { get => CategoryIdentifier; set => CategoryIdentifier = value; }
 
         /// <inheritdoc />
@@ -79,13 +79,13 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <remarks>
-        /// <para>On iOS, setting this causes the notification to be delivered on a calendar time.</para>
-        /// <para>If it has previously been manually set to a different type of trigger, or has not been set before,
-        /// this returns null.</para>
-        /// <para>The millisecond component of the provided DateTime is ignored.</para>
+        /// <para>iOS에서 이 값을 설정하면 알림이 캘린더 시간에 전달됩니다.</para>
+        /// <para>이전에 다른 유형의 트리거로 수동 설정되었거나 설정된 적이 없는 경우
+        /// null을 반환합니다.</para>
+        /// <para>제공된 DateTime의 밀리초 구성 요소는 무시됩니다.</para>
         /// </remarks>
-        /// <value>A <see cref="DateTime"/> representing the delivery time of this message, or null if
-        /// not set or the trigger isn't a <see cref="iOSNotificationCalendarTrigger"/>.</value>
+        /// <value>이 메시지의 전달 시간을 나타내는 <see cref="DateTime"/>, 또는 설정되지 않았거나
+        /// 트리거가 <see cref="iOSNotificationCalendarTrigger"/>가 아닌 경우 null.</value>
         public DateTime? DeliveryTime
         {
             get
@@ -131,7 +131,7 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// The category identifier for this notification.
+        /// 이 알림의 카테고리 식별자.
         /// </summary>
         public string CategoryIdentifier
         {
@@ -140,37 +140,37 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// Does nothing on iOS.
+        /// iOS에서는 아무 작업도 수행하지 않습니다.
         /// </summary>
         public string SmallIcon { get => null; set {} }
 
         /// <summary>
-        /// Does nothing on iOS.
+        /// iOS에서는 아무 작업도 수행하지 않습니다.
         /// </summary>
         public string LargeIcon { get => null; set {} }
 
         /// <summary>
-        /// Instantiate a new instance of <see cref="iOSGameNotification"/>.
+        /// <see cref="iOSGameNotification"/>의 새 인스턴스를 생성합니다.
         /// </summary>
         public iOSGameNotification()
         {
             internalNotification = new iOSNotification
             {
-                ShowInForeground = true // Deliver in foreground by default
+                ShowInForeground = true // 기본적으로 포그라운드에서 전달
             };
         }
 
         /// <summary>
-        /// Instantiate a new instance of <see cref="iOSGameNotification"/> from a delivered notification.
+        /// 전달된 알림으로부터 <see cref="iOSGameNotification"/>의 새 인스턴스를 생성합니다.
         /// </summary>
-        /// <param name="internalNotification">The delivered notification.</param>
+        /// <param name="internalNotification">전달된 알림.</param>
         internal iOSGameNotification(iOSNotification internalNotification)
         {
             this.internalNotification = internalNotification;
         }
 
         /// <summary>
-        /// Mark this notifications scheduled flag.
+        /// 이 알림의 예약 완료 플래그를 설정합니다.
         /// </summary>
         internal void OnScheduled()
         {
