@@ -73,7 +73,7 @@ public class NotificationExample : MonoBehaviour
 | `PendingNotification` | 예약되었거나 큐에 있는 알림의 래퍼(`Notification` 필드, `Reschedule` 필드) |
 | `GameNotificationChannel` | Android 알림 채널 설정(`readonly struct`). iOS 에서는 아무 동작도 하지 않습니다 |
 | `GameNotificationsMonoBehaviour` | 플랫폼별 구현을 감싸고 포그라운드/백그라운드 전환을 처리하는 MonoBehaviour |
-| `OperatingMode` | `GameNotificationsMonoBehaviour.Mode` 에 쓰는 `[Flags]` 열거형 |
+| `OperatingMode` | `GameNotificationsMonoBehaviour.Mode` 와 `MobileNotificationService` 생성자에 쓰는 `[Flags]` 열거형 |
 
 ### INotificationService 메서드
 
@@ -84,7 +84,7 @@ public class NotificationExample : MonoBehaviour
 | `CancelNotification(int)` / `CancelAllScheduledNotifications()` | 예약된 알림을 취소합니다 |
 | `DismissNotification(int)` / `DismissAllDisplayedNotifications()` | 이미 표시된 알림을 닫습니다 |
 | `PendingNotifications` | 예약되었거나 큐에 있는 알림 목록 |
-| `OnLocalNotificationDeliveredEvent` / `OnLocalNotificationExpiredEvent` | 전달/만료 이벤트. 아래 "주의 사항" 참고 |
+| `OnLocalNotificationDeliveredEvent` / `OnLocalNotificationExpiredEvent` | 앱이 포그라운드일 때 대기 목록의 알림이 전달되면 / `Queue` 모드에서 큐 알림이 표시 시점을 지나 제거되면 발생 |
 
 ### OperatingMode
 
@@ -97,7 +97,13 @@ public class NotificationExample : MonoBehaviour
 | `QueueAndClear` | `Queue` + `ClearOnForegrounding` |
 | `QueueClearAndReschedule` | `Queue` + `ClearOnForegrounding` + `RescheduleAfterClearing`. 앱이 포그라운드에 있는 동안 알림이 표시되지 않게 합니다 |
 
-`MobileNotificationService` 는 `Mode` 를 바꾸는 API 를 제공하지 않으므로 항상 `NoQueue` 로 동작합니다. 다른 모드가 필요하면 `GameNotificationsMonoBehaviour` 를 직접 만들어 `Mode` 를 설정한 뒤 `Initialize(channels)` 를 호출합니다.
+`new MobileNotificationService(channels)` 는 `NoQueue` 로 동작합니다. 다른 모드가 필요하면 첫 인자로 모드를 넘깁니다. 모드는 생성할 때만 정할 수 있습니다.
+
+```csharp
+var notifications = new MobileNotificationService(
+    OperatingMode.QueueClearAndReschedule,
+    new GameNotificationChannel("default", "기본 알림", "게임 일반 알림"));
+```
 
 ### 플랫폼별 차이
 
@@ -113,13 +119,13 @@ public class NotificationExample : MonoBehaviour
 
 ## 주의 사항
 
-- **전달/만료 이벤트가 호출되지 않습니다.** `MobileNotificationService` 생성자가 이벤트의 현재 값(구독 전이라 `null`)을 내부 MonoBehaviour 에 복사하기 때문에, 나중에 `OnLocalNotificationDeliveredEvent` / `OnLocalNotificationExpiredEvent` 를 구독해도 호출되지 않습니다. 콜백이 필요하면 `GameNotificationsMonoBehaviour` 를 직접 사용하고 `OnLocalNotificationDelivered` / `OnLocalNotificationExpired` 필드에 할당하세요.
-- **에디터에서는 실제로 예약되지 않습니다.** `MobileNotificationService` 는 에디터에서 내부 전용 `EditorGameNotification` 을 반환하고, `ScheduleNotification` 은 ID 만 채운 `PendingNotification` 을 돌려줄 뿐 `PendingNotifications` 에 추가하지 않습니다.
+- **에디터에서는 실제로 예약되지 않습니다.** `MobileNotificationService` 는 에디터에서 내부 전용 `EditorGameNotification` 을 반환하고, `ScheduleNotification` 은 ID 만 채운 `PendingNotification` 을 돌려줄 뿐 `PendingNotifications` 에 추가하지 않습니다. 따라서 에디터에서는 전달/만료 이벤트도 발생하지 않습니다.
+- `MobileNotificationService.ScheduleNotification(null)` 은 `ArgumentNullException` 을 던집니다.
 - **지원하지 않는 플랫폼**(Android/iOS 외 빌드)에서는 `CreateNotification()` 이 `null` 을 반환하고 취소/닫기 메서드는 아무 동작도 하지 않습니다.
 - **알림 권한을 요청하지 않습니다.** iOS 알림 권한이나 Android 13 이상의 알림 권한은 Unity Mobile Notifications 의 API 로 직접 요청해야 합니다.
 - **원격(푸시) 알림은 다루지 않습니다.** 수신 처리는 로컬 알림에 대해서만 구현되어 있습니다.
 - 취소할 알림은 `Id` 를 직접 지정해 두는 것이 안전합니다. 플랫폼에 따라 자동 발급 여부가 다릅니다.
-- 앱이 백그라운드로 갈 때 예약 상태를 `PlayerPrefs` 키 `notifications` 에 저장하고, 포그라운드로 돌아오면 다시 읽습니다. 같은 키를 다른 용도로 쓰지 마세요.
+- 앱이 백그라운드로 갈 때 예약 상태를 `PlayerPrefs` 키 `notifications` 에 저장하고, 포그라운드로 돌아오면 다시 읽습니다. 같은 키를 다른 용도로 쓰지 마세요. 저장되는 값은 `Id`, `Title`, `Body`, `Subtitle`, `Channel`, `BadgeNumber`, `DeliveryTime`, `SmallIcon`, `LargeIcon`, `ShouldAutoCancel` 입니다. 예약을 지우지 않는 모드에서는 OS 예약이 남아 있으므로 복원한 알림을 다시 예약하지 않고 예약됨(`Scheduled`) 상태로 되살립니다. 0.1.7 이하가 저장한 값은 읽을 수 없어 빈 상태로 처리됩니다.
 - `AndroidGameNotification` 은 `UNITY_ANDROID`, `iOSGameNotification` 은 `UNITY_IOS` 에서만 컴파일됩니다. 플랫폼 타입을 직접 참조하는 코드는 같은 전처리 지시문으로 감싸야 합니다.
 
 ## 요구 사항과 의존성

@@ -53,7 +53,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <summary>
-        /// 새 <see cref="T:NotificationSamples.Android.AndroidNotification" />을 생성합니다.
+        /// 새 <see cref="iOSGameNotification" />을 생성합니다.
         /// </summary>
         IGameNotification IGameNotificationsPlatform.CreateNotification()
         {
@@ -62,7 +62,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <summary>
-        /// 새 <see cref="T:NotificationSamples.Android.AndroidNotification" />을 생성합니다.
+        /// 새 <see cref="iOSGameNotification" />을 생성합니다.
         /// </summary>
         public iOSGameNotification CreateNotification()
         {
@@ -117,7 +117,7 @@ namespace Geuneda.NotificationService
         // 로컬 알림 수신을 위한 이벤트 핸들러.
         private void OnLocalNotificationReceived(iOSNotification notification)
         {
-            // 전달된 알림으로 새 AndroidGameNotification을 생성하되,
+            // 전달된 알림으로 새 iOSGameNotification을 생성하되,
             // 이벤트가 등록된 경우에만 수행
             NotificationReceived?.Invoke(new iOSGameNotification(notification));
         }

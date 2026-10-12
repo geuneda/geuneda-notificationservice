@@ -14,8 +14,9 @@ namespace Geuneda.NotificationService
         /// </summary>
         /// <remarks>
         /// <para>
-        /// null인 경우 알림이 전달되면 자동으로 생성되며,
-        /// 이후에 조회할 수 있습니다.
+        /// null인 경우 생성 방식은 플랫폼마다 다릅니다. Android는 예약할 때 OS가 발급한 ID로 채우고,
+        /// iOS는 알림 객체를 만들 때 내부 식별자가 생성됩니다. <see cref="OperatingMode.Queue"/> 모드에서
+        /// 큐에 넣는 알림과 에디터에서 예약하는 알림은 예약 요청 시 ID가 생성됩니다.
         /// </para>
         /// <para>일부 플랫폼에서는 내부적으로 문자열 식별자로 변환될 수 있습니다.</para>
         /// </remarks>

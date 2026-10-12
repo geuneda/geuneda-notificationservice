@@ -77,11 +77,23 @@ namespace Geuneda.NotificationService
 		/// <inheritdoc />
 		public IReadOnlyList<PendingNotification> PendingNotifications => _monoBehaviour.PendingNotifications;
 		
-		public MobileNotificationService(params GameNotificationChannel[] channels)
+		public MobileNotificationService(params GameNotificationChannel[] channels) : this(OperatingMode.NoQueue, channels)
+		{
+		}
+
+		/// <summary>
+		/// 주어진 <paramref name="mode"/>로 동작하는 서비스를 생성합니다.
+		/// </summary>
+		/// <param name="mode">내부 <see cref="GameNotificationsMonoBehaviour.Mode"/>에 설정할 동작 모드.</param>
+		/// <param name="channels">Android용으로 등록할 선택적 채널 컬렉션</param>
+		public MobileNotificationService(OperatingMode mode, params GameNotificationChannel[] channels)
 		{
 			_monoBehaviour = new GameObject("NotificationService").AddComponent<GameNotificationsMonoBehaviour>();
-			_monoBehaviour.OnLocalNotificationDelivered = OnLocalNotificationDeliveredEvent;
-			_monoBehaviour.OnLocalNotificationExpired = OnLocalNotificationExpiredEvent;
+			// Initialize가 포그라운드 처리에서 Mode를 사용하므로 그 전에 설정
+			_monoBehaviour.Mode = mode;
+			// 생성 이후에 구독한 핸들러도 호출되도록 호출 시점의 이벤트를 전달
+			_monoBehaviour.OnLocalNotificationDelivered = notification => OnLocalNotificationDeliveredEvent?.Invoke(notification);
+			_monoBehaviour.OnLocalNotificationExpired = notification => OnLocalNotificationExpiredEvent?.Invoke(notification);
 
 			_monoBehaviour.Initialize(channels);
 			UnityEngine.Object.DontDestroyOnLoad(_monoBehaviour);
@@ -100,6 +112,11 @@ namespace Geuneda.NotificationService
 		/// <inheritdoc />
 		public PendingNotification ScheduleNotification(IGameNotification gameNotification)
 		{
+			if (gameNotification == null)
+			{
+				throw new ArgumentNullException(nameof(gameNotification));
+			}
+
 #if UNITY_EDITOR
 			if (!gameNotification.Id.HasValue)
             {

@@ -137,6 +137,12 @@ namespace Geuneda.NotificationService
             // 각 대기 중인 알림의 만료 여부를 확인한 후 제거
             for (int i = PendingNotifications.Count - 1; i >= 0; --i)
             {
+                // 만료 콜백에서 취소 API 로 목록이 줄어들 수 있으므로 범위를 매번 다시 확인한다(남은 항목은 다음 프레임에 다시 검사)
+                if (i >= PendingNotifications.Count)
+                {
+                    continue;
+                }
+
                 PendingNotification queuedNotification = PendingNotifications[i];
                 DateTime? time = queuedNotification.Notification.DeliveryTime;
                 if (time != null && time < DateTime.Now)
@@ -281,8 +287,9 @@ namespace Geuneda.NotificationService
                 }
             }
 
-            // 디스크에 저장
-            PlayerPrefs.SetString("notifications", JsonUtility.ToJson(notificationsToSave));
+            // 디스크에 저장. 백그라운드에서 OS 가 프로세스를 바로 종료할 수 있으므로 즉시 기록한다
+            PlayerPrefs.SetString("notifications", SerializableNotificationConverter.ToJson(notificationsToSave));
+            PlayerPrefs.Save();
         }
 
         /// <summary>
@@ -476,9 +483,29 @@ namespace Geuneda.NotificationService
             
             if (deliveredIndex >= 0)
             {
-                OnLocalNotificationDelivered?.Invoke(PendingNotifications[deliveredIndex]);
+                // 구독자가 콜백에서 취소 API 를 불러 목록을 바꿀 수 있으므로 먼저 목록에서 뺀 뒤 알린다
+                var deliveredPendingNotification = PendingNotifications[deliveredIndex];
                 PendingNotifications.RemoveAt(deliveredIndex);
+                OnLocalNotificationDelivered?.Invoke(deliveredPendingNotification);
             }
+        }
+
+        /// <summary>
+        /// OS 에 이미 예약된 알림을 저장값에서 복원했을 때, 다시 예약하지 않고 예약됨 상태로 표시합니다.
+        /// </summary>
+        private static void MarkAsAlreadyScheduled(IGameNotification notification)
+        {
+#if UNITY_ANDROID
+            if (notification is AndroidGameNotification androidNotification)
+            {
+                androidNotification.OnScheduled();
+            }
+#elif UNITY_IOS
+            if (notification is iOSGameNotification iosNotification)
+            {
+                iosNotification.OnScheduled();
+            }
+#endif
         }
 
         // 포그라운드 알림을 지우고 파일에서 항목을 재예약
@@ -488,7 +515,7 @@ namespace Geuneda.NotificationService
             _platform.OnForeground();
 
             // 저장된 항목 역직렬화
-            var notifications = JsonUtility.FromJson<List<SerializableNotification>>(PlayerPrefs.GetString("notifications"));
+            var notifications = SerializableNotificationConverter.FromJson(PlayerPrefs.GetString("notifications"));
 
             // 포그라운드 전환
             if ((Mode & OperatingMode.ClearOnForegrounding) == OperatingMode.ClearOnForegrounding)
@@ -526,7 +553,12 @@ namespace Geuneda.NotificationService
                 {
                     if (savedNotification.DeliveryTime > DateTime.Now)
                     {
-                        PendingNotifications.Add(new PendingNotification(savedNotification.AsGameNotification(_platform)));
+                        var restoredNotification = savedNotification.AsGameNotification(_platform);
+
+                        // OS 예약은 그대로 남아 있으므로 다시 예약하지 않고 예약됨 상태만 되살린다.
+                        // 그래야 다음 백그라운드 전환 때 저장 대상(Scheduled)에 다시 포함된다.
+                        MarkAsAlreadyScheduled(restoredNotification);
+                        PendingNotifications.Add(new PendingNotification(restoredNotification));
                     }
                 }
             }

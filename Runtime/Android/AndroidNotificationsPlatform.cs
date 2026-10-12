@@ -133,7 +133,7 @@ namespace Geuneda.NotificationService
 
         /// <inheritdoc />
         /// <summary>
-        /// Android에서는 현재 구현되지 않음
+        /// <see cref="AndroidNotificationCenter.CancelDisplayedNotification"/>으로 표시된 알림을 닫습니다.
         /// </summary>
         public void DismissNotification(int notificationId)
         {
