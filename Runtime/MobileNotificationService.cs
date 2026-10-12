@@ -76,6 +76,16 @@ namespace Geuneda.NotificationService
 
 		/// <inheritdoc />
 		public IReadOnlyList<PendingNotification> PendingNotifications => _monoBehaviour.PendingNotifications;
+
+		/// <summary>
+		/// 배지 번호를 직접 지정하지 않은 알림에 배지 번호를 자동으로 매길지 여부입니다(기본값 true).
+		/// 내부 <see cref="GameNotificationsMonoBehaviour.AutoBadging"/>을 읽고 씁니다.
+		/// </summary>
+		public bool AutoBadging
+		{
+			get => _monoBehaviour.AutoBadging;
+			set => _monoBehaviour.AutoBadging = value;
+		}
 		
 		public MobileNotificationService(params GameNotificationChannel[] channels) : this(OperatingMode.NoQueue, channels)
 		{

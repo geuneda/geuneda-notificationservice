@@ -105,6 +105,12 @@ var notifications = new MobileNotificationService(
     new GameNotificationChannel("default", "기본 알림", "게임 일반 알림"));
 ```
 
+배지 자동 부여는 `MobileNotificationService.AutoBadging`(기본값 `true`, 0.1.9)으로 끄고 켭니다. `INotificationService` 인터페이스가 아니라 구체 클래스의 프로퍼티입니다. `Queue` 가 들어간 모드에서, 큐의 알림 중 배지 번호를 직접 지정한 것이 하나도 없을 때 전달 시간순으로 1부터 매깁니다.
+
+```csharp
+notifications.AutoBadging = false; // 배지를 직접 관리할 때
+```
+
 ### 플랫폼별 차이
 
 | 항목 | Android | iOS |

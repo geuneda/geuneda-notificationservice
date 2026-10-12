@@ -4,6 +4,11 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [Semantic Versioning](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [0.1.9] - 2026-10-12
+
+**New**:
+- *MobileNotificationService*에 `AutoBadging` 프로퍼티를 추가해 배지 자동 부여 여부를 바꿀 수 있게 함(기본값 true)
+
 ## [0.1.8] - 2026-10-12
 
 **New**:
