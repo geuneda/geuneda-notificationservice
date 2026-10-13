@@ -106,6 +106,32 @@ namespace Geuneda.NotificationService
         /// </summary>
         public void OnBackground() {}
 
+        /// <inheritdoc />
+        public NotificationPermission GetPermission()
+        {
+            switch (iOSNotificationCenter.GetNotificationSettings().AuthorizationStatus)
+            {
+                case AuthorizationStatus.NotDetermined:
+                    return NotificationPermission.NotDetermined;
+                case AuthorizationStatus.Denied:
+                    return NotificationPermission.Denied;
+                default:
+                    // Authorized, Provisional, Ephemeral
+                    return NotificationPermission.Granted;
+            }
+        }
+
+        /// <inheritdoc />
+        /// <remarks>
+        /// 알림, 배지, 소리 권한을 요청합니다. 원격 알림 등록은 하지 않습니다.
+        /// </remarks>
+        public IPermissionRequestOperation RequestPermission()
+        {
+            var options = AuthorizationOption.Alert | AuthorizationOption.Badge | AuthorizationOption.Sound;
+
+            return new iOSPermissionRequestOperation(new AuthorizationRequest(options, false));
+        }
+
         /// <summary>
         /// 델리게이트 등록을 해제합니다.
         /// </summary>
@@ -120,6 +146,31 @@ namespace Geuneda.NotificationService
             // 전달된 알림으로 새 iOSGameNotification을 생성하되,
             // 이벤트가 등록된 경우에만 수행
             NotificationReceived?.Invoke(new iOSGameNotification(notification));
+        }
+
+        private sealed class iOSPermissionRequestOperation : IPermissionRequestOperation
+        {
+            private readonly AuthorizationRequest _request;
+
+            public iOSPermissionRequestOperation(AuthorizationRequest request)
+            {
+                _request = request;
+            }
+
+            public bool IsDone => _request.IsFinished;
+
+            public NotificationPermission Result
+            {
+                get
+                {
+                    if (!_request.IsFinished)
+                    {
+                        return NotificationPermission.Pending;
+                    }
+
+                    return _request.Granted ? NotificationPermission.Granted : NotificationPermission.Denied;
+                }
+            }
         }
     }
 }

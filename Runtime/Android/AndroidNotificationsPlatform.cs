@@ -162,6 +162,24 @@ namespace Geuneda.NotificationService
         /// </summary>
         public void OnBackground() {}
 
+        /// <inheritdoc />
+        /// <remarks>
+        /// Android 13(API 33) 미만에서는 런타임 권한이 없지만, 기기 설정에서 앱 알림을 끈 경우 <see cref="NotificationPermission.Denied"/> 입니다.
+        /// </remarks>
+        public NotificationPermission GetPermission()
+        {
+            return ToPermission(AndroidNotificationCenter.UserPermissionToPost);
+        }
+
+        /// <inheritdoc />
+        /// <remarks>
+        /// Android 13 이상이고 targetSdk 가 33 이상이면 POST_NOTIFICATIONS 권한 요청 창을 띄웁니다.
+        /// </remarks>
+        public IPermissionRequestOperation RequestPermission()
+        {
+            return new AndroidPermissionRequestOperation(new PermissionRequest());
+        }
+
         /// <summary>
         /// 델리게이트 등록을 해제합니다.
         /// </summary>
@@ -176,6 +194,36 @@ namespace Geuneda.NotificationService
             // 전달된 알림으로 새 AndroidGameNotification을 생성하되,
             // 이벤트가 등록된 경우에만 수행
             NotificationReceived?.Invoke(new AndroidGameNotification(data.Notification, data.Id, data.Channel));
+        }
+
+        private static NotificationPermission ToPermission(PermissionStatus status)
+        {
+            switch (status)
+            {
+                case PermissionStatus.Allowed:
+                    return NotificationPermission.Granted;
+                case PermissionStatus.NotRequested:
+                    return NotificationPermission.NotDetermined;
+                case PermissionStatus.RequestPending:
+                    return NotificationPermission.Pending;
+                default:
+                    // Denied, DeniedDontAskAgain(구버전 저장값), NotificationsBlockedForApp(기기 설정에서 끔)
+                    return NotificationPermission.Denied;
+            }
+        }
+
+        private sealed class AndroidPermissionRequestOperation : IPermissionRequestOperation
+        {
+            private readonly PermissionRequest _request;
+
+            public AndroidPermissionRequestOperation(PermissionRequest request)
+            {
+                _request = request;
+            }
+
+            public bool IsDone => _request.Status != PermissionStatus.RequestPending;
+
+            public NotificationPermission Result => ToPermission(_request.Status);
         }
     }
 }

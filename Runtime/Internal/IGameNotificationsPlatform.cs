@@ -59,6 +59,32 @@ namespace Geuneda.NotificationService
         /// 애플리케이션을 백그라운드로 전환하거나 종료할 때 필요한 처리를 수행합니다.
         /// </summary>
         void OnBackground();
+
+        /// <summary>
+        /// 현재 OS 알림 권한 상태를 가져옵니다.
+        /// </summary>
+        NotificationPermission GetPermission();
+
+        /// <summary>
+        /// OS 알림 권한 요청을 시작합니다. 이미 결정된 경우 요청 창 없이 끝난 작업을 반환할 수 있습니다.
+        /// </summary>
+        IPermissionRequestOperation RequestPermission();
+    }
+
+    /// <summary>
+    /// 진행 중인 OS 알림 권한 요청. 끝날 때까지 매 프레임 확인합니다.
+    /// </summary>
+    internal interface IPermissionRequestOperation
+    {
+        /// <summary>
+        /// 사용자가 응답했거나 요청 창 없이 결정되어 요청이 끝났는지 여부.
+        /// </summary>
+        bool IsDone { get; }
+
+        /// <summary>
+        /// 요청 결과. 끝나기 전에는 <see cref="NotificationPermission.Pending"/> 입니다.
+        /// </summary>
+        NotificationPermission Result { get; }
     }
 
     /// <summary>

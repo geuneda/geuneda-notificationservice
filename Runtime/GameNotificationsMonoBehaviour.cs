@@ -70,6 +70,15 @@ namespace Geuneda.NotificationService
         // 백그라운드로 전환 시 알림이 큐에 추가되기 위해 미래 시점이어야 하는 최소 시간
         private static readonly TimeSpan _minimumNotificationTime = new TimeSpan(0, 0, 2);
 
+        // 예약 목록을 저장하는 PlayerPrefs 키
+        internal const string NotificationsPrefsKey = "notifications";
+        // 앱 안 알림 설정을 저장하는 PlayerPrefs 키(1 켬, 0 끔)
+        internal const string EnabledPrefsKey = "geuneda.notificationservice.enabled";
+        // 마지막으로 자동 부여한 알림 ID 를 저장하는 PlayerPrefs 키
+        internal const string LastIdPrefsKey = "geuneda.notificationservice.lastId";
+        // 자동 ID 범위의 시작. 게임이 직접 지정하는 ID(이 값 미만)와 겹치지 않게 한다
+        internal const int FirstAutoNotificationId = 1_000_000;
+
         /// <summary>
         /// 알림 관리자의 동작 모드
         /// </summary>
@@ -92,8 +101,17 @@ namespace Geuneda.NotificationService
         /// <seealso cref="OperatingMode.Queue"/>
         public Action<PendingNotification> OnLocalNotificationExpired;
 
+        /// <summary>
+        /// 앱 안 알림 설정(<see cref="NotificationsEnabled"/>)이 바뀔 때 발생하는 이벤트입니다. 인자는 바뀐 값입니다.
+        /// </summary>
+        public Action<bool> OnNotificationsEnabledChanged;
+
         private IGameNotificationsPlatform _platform;
         private bool _inForeground = true;
+        private bool _notificationsEnabled = true;
+        private int _lastNotificationId;
+        private IPermissionRequestOperation _permissionRequest;
+        private readonly List<Action<NotificationPermission>> _permissionCallbacks = new List<Action<NotificationPermission>>();
 
         /// <summary>
         /// 예약되었거나 큐에 있는 알림 컬렉션을 가져옵니다.
@@ -104,6 +122,30 @@ namespace Geuneda.NotificationService
         /// 이 관리자가 초기화되었는지 여부를 가져옵니다.
         /// </summary>
         public bool Initialized { get; private set; }
+
+        /// <summary>
+        /// 앱 안 알림 설정을 가져옵니다. 바꾸려면 <see cref="SetNotificationsEnabled"/> 를 씁니다.
+        /// </summary>
+        public bool NotificationsEnabled => _notificationsEnabled;
+
+        /// <summary>
+        /// 현재 OS 알림 권한 상태를 가져옵니다. 지원하지 않는 플랫폼에서는 <see cref="NotificationPermission.Granted"/> 입니다.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="RequestPermission"/> 으로 시작한 요청에 사용자가 아직 응답하지 않았으면 <see cref="NotificationPermission.Pending"/> 입니다.
+        /// </remarks>
+        public NotificationPermission Permission
+        {
+            get
+            {
+                if (_platform == null)
+                {
+                    return NotificationPermission.Granted;
+                }
+
+                return _permissionRequest != null ? NotificationPermission.Pending : _platform.GetPermission();
+            }
+        }
 
         /// <summary>
         /// 필요한 경우 플랫폼 객체를 정리합니다
@@ -122,6 +164,8 @@ namespace Geuneda.NotificationService
             }
 
             _inForeground = false;
+            _permissionRequest = null;
+            _permissionCallbacks.Clear();
         }
 
         /// <summary>
@@ -129,6 +173,8 @@ namespace Geuneda.NotificationService
         /// </summary>
         private void Update()
         {
+            UpdatePermissionRequest();
+
             if ((Mode & OperatingMode.Queue) != OperatingMode.Queue)
             {
                 return;
@@ -154,18 +200,29 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
-        /// 애플리케이션 포그라운드/백그라운드 이벤트에 응답합니다.
+        /// 애플리케이션 포그라운드/백그라운드 전환에 응답합니다.
         /// </summary>
-        private void OnApplicationFocus(bool hasFocus)
+        /// <remarks>
+        /// 포커스(<c>OnApplicationFocus</c>)가 아니라 일시 정지를 기준으로 합니다. 결제창이나 광고처럼 앱 위에 창이 떠서
+        /// 포커스만 잃은 경우에는 백그라운드로 보지 않습니다. 시작 직후처럼 상태가 바뀌지 않은 호출은 무시합니다.
+        /// </remarks>
+        private void OnApplicationPause(bool pauseStatus)
         {
             if (_platform == null || !Initialized)
             {
                 return;
             }
 
-            _inForeground = hasFocus;
+            var inForeground = !pauseStatus;
 
-            if (hasFocus)
+            if (_inForeground == inForeground)
+            {
+                return;
+            }
+
+            _inForeground = inForeground;
+
+            if (inForeground)
             {
                 OnForegrounding();
 
@@ -288,7 +345,7 @@ namespace Geuneda.NotificationService
             }
 
             // 디스크에 저장. 백그라운드에서 OS 가 프로세스를 바로 종료할 수 있으므로 즉시 기록한다
-            PlayerPrefs.SetString("notifications", SerializableNotificationConverter.ToJson(notificationsToSave));
+            PlayerPrefs.SetString(NotificationsPrefsKey, SerializableNotificationConverter.ToJson(notificationsToSave));
             PlayerPrefs.Save();
         }
 
@@ -304,28 +361,57 @@ namespace Geuneda.NotificationService
                 throw new InvalidOperationException("NotificationsManager already initialized.");
             }
 
-            Initialized = true;
+            IGameNotificationsPlatform platform = null;
 
 #if UNITY_ANDROID
-            _platform = new AndroidNotificationsPlatform();
+            var androidPlatform = new AndroidNotificationsPlatform();
 
-            // 알림 채널 등록
-            var doneDefault = false;
-            foreach (var notificationChannel in channels)
+            try
             {
-                var platform = _platform as AndroidNotificationsPlatform;
-                
-                if (!doneDefault)
+                // 알림 채널 등록
+                var doneDefault = false;
+                foreach (var notificationChannel in channels)
                 {
-                    doneDefault = true;
-                    platform.DefaultChannelId = notificationChannel.Id;
-                }
+                    if (!doneDefault)
+                    {
+                        doneDefault = true;
+                        androidPlatform.DefaultChannelId = notificationChannel.Id;
+                    }
 
-                platform.RegisterChannel(notificationChannel);
+                    androidPlatform.RegisterChannel(notificationChannel);
+                }
             }
+            catch
+            {
+                // 생성자에서 구독한 정적 수신 이벤트가 남지 않도록 실패한 플랫폼을 정리한다(다시 Initialize 할 수 있다)
+                androidPlatform.Dispose();
+                throw;
+            }
+
+            platform = androidPlatform;
 #elif UNITY_IOS
-            _platform = new iOSNotificationsPlatform();
+            platform = new iOSNotificationsPlatform();
 #endif
+
+            InitializeWithPlatform(platform);
+        }
+
+        /// <summary>
+        /// 주어진 플랫폼 구현으로 초기화합니다. 테스트에서 플랫폼을 바꿔 끼울 때 씁니다.
+        /// </summary>
+        /// <param name="platform">사용할 플랫폼 구현. null 이면 지원하지 않는 플랫폼처럼 동작합니다.</param>
+        /// <exception cref="InvalidOperationException">이미 초기화된 경우.</exception>
+        internal void InitializeWithPlatform(IGameNotificationsPlatform platform)
+        {
+            if (Initialized)
+            {
+                throw new InvalidOperationException("NotificationsManager already initialized.");
+            }
+
+            Initialized = true;
+            _notificationsEnabled = PlayerPrefs.GetInt(EnabledPrefsKey, 1) != 0;
+            _lastNotificationId = PlayerPrefs.GetInt(LastIdPrefsKey, 0);
+            _platform = platform;
 
             if (_platform == null)
             {
@@ -356,6 +442,7 @@ namespace Geuneda.NotificationService
         /// 알림 전달을 예약합니다.
         /// </summary>
         /// <param name="notification">전달할 알림.</param>
+        /// <returns>예약된 알림. <paramref name="notification"/>이 null 이거나 앱 안 알림 설정이 꺼져 있으면 null.</returns>
         public PendingNotification ScheduleNotification(IGameNotification notification)
         {
             if (!Initialized)
@@ -363,9 +450,15 @@ namespace Geuneda.NotificationService
                 throw new InvalidOperationException("Must call Initialize() first.");
             }
 
-            if (notification == null)
+            if (notification == null || !_notificationsEnabled)
             {
                 return null;
+            }
+
+            // ID가 없으면 단조 증가 ID를 부여 (나중에 식별하고 플랫폼 간에 같은 방식으로 취소할 수 있도록)
+            if (!notification.Id.HasValue)
+            {
+                notification.Id = AllocateNotificationId();
             }
 
             // 큐 모드이면 즉시 예약하지 않음.
@@ -373,11 +466,6 @@ namespace Geuneda.NotificationService
             if ((Mode & OperatingMode.Queue) != OperatingMode.Queue || notification.DeliveryTime == null)
             {
                 _platform?.ScheduleNotification(notification);
-            }
-            else if (!notification.Id.HasValue)
-            {
-                // ID가 없는 항목에 대해 ID를 생성 (나중에 식별할 수 있도록)
-                notification.Id = Math.Abs(DateTime.Now.ToString("yyMMddHHmmssffffff").GetHashCode());
             }
 
             // 대기 중인 알림 등록
@@ -467,6 +555,143 @@ namespace Geuneda.NotificationService
         }
 
         /// <summary>
+        /// 앱 안 알림 설정을 바꿉니다. 값은 PlayerPrefs 에 저장되어 다음 실행에도 유지됩니다.
+        /// </summary>
+        /// <remarks>
+        /// 끄면 예약된 알림을 모두 취소하고 표시된 알림을 닫으며, 저장해 둔 예약 목록도 지웁니다.
+        /// 켜도 지운 알림을 되살리지 않으므로 <see cref="OnNotificationsEnabledChanged"/> 에서 필요한 알림을 다시 예약합니다.
+        /// 값이 그대로이면 아무것도 하지 않습니다.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException"><see cref="Initialize"/>가 호출되지 않은 경우.</exception>
+        public void SetNotificationsEnabled(bool enabled)
+        {
+            if (!Initialized)
+            {
+                throw new InvalidOperationException("Must call Initialize() first.");
+            }
+
+            if (_notificationsEnabled == enabled)
+            {
+                return;
+            }
+
+            _notificationsEnabled = enabled;
+            PlayerPrefs.SetInt(EnabledPrefsKey, enabled ? 1 : 0);
+
+            if (!enabled)
+            {
+                _platform?.CancelAllScheduledNotifications();
+                _platform?.DismissAllDisplayedNotifications();
+                PendingNotifications.Clear();
+                PlayerPrefs.DeleteKey(NotificationsPrefsKey);
+            }
+
+            PlayerPrefs.Save();
+            OnNotificationsEnabledChanged?.Invoke(enabled);
+        }
+
+        /// <summary>
+        /// OS 알림 권한을 요청하고 결과를 <paramref name="onCompleted"/> 로 알립니다.
+        /// </summary>
+        /// <remarks>
+        /// 이미 결정되어 요청 창 없이 끝나면 바로 알립니다. 진행 중인 요청이 있으면 새로 요청하지 않고 그 결과를 함께 받습니다.
+        /// 지원하지 않는 플랫폼에서는 바로 <see cref="NotificationPermission.Granted"/> 로 알립니다.
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="onCompleted"/>가 null 인 경우.</exception>
+        /// <exception cref="InvalidOperationException"><see cref="Initialize"/>가 호출되지 않은 경우.</exception>
+        public void RequestPermission(Action<NotificationPermission> onCompleted)
+        {
+            if (!Initialized)
+            {
+                throw new InvalidOperationException("Must call Initialize() first.");
+            }
+
+            if (onCompleted == null)
+            {
+                throw new ArgumentNullException(nameof(onCompleted));
+            }
+
+            if (_platform == null)
+            {
+                onCompleted(NotificationPermission.Granted);
+
+                return;
+            }
+
+            _permissionCallbacks.Add(onCompleted);
+
+            if (_permissionRequest != null)
+            {
+                return;
+            }
+
+            _permissionRequest = _platform.RequestPermission();
+            UpdatePermissionRequest();
+        }
+
+        /// <summary>
+        /// 자동으로 부여할 다음 알림 ID 를 반환합니다. <see cref="FirstAutoNotificationId"/> 부터 1씩 늘고(끝에 닿으면 처음으로)
+        /// PlayerPrefs 에 저장되어 다음 실행에도 이어지며, 대기 목록에 같은 ID 가 있으면 건너뜁니다.
+        /// </summary>
+        internal int AllocateNotificationId()
+        {
+            do
+            {
+                _lastNotificationId = _lastNotificationId < FirstAutoNotificationId || _lastNotificationId == int.MaxValue
+                    ? FirstAutoNotificationId
+                    : _lastNotificationId + 1;
+            }
+            while (HasPendingNotificationId(_lastNotificationId));
+
+            // OS 에 예약하기 전에 디스크에 확정한다. 백그라운드 전환 전에 앱이 죽어도 다음 실행에서 같은 ID 를 다시 쓰지 않게 한다
+            PlayerPrefs.SetInt(LastIdPrefsKey, _lastNotificationId);
+            PlayerPrefs.Save();
+
+            return _lastNotificationId;
+        }
+
+        private bool HasPendingNotificationId(int notificationId)
+        {
+            for (var i = 0; i < PendingNotifications.Count; i++)
+            {
+                if (PendingNotifications[i].Notification.Id == notificationId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // 권한 요청이 끝났으면 기다리던 콜백에 결과를 알린다
+        private void UpdatePermissionRequest()
+        {
+            if (_permissionRequest == null || !_permissionRequest.IsDone)
+            {
+                return;
+            }
+
+            var result = _permissionRequest.Result;
+            // 콜백 안에서 다시 요청할 수 있으므로 상태를 먼저 비우고 복사본으로 알린다
+            var callbacks = _permissionCallbacks.ToArray();
+
+            _permissionRequest = null;
+            _permissionCallbacks.Clear();
+
+            foreach (var callback in callbacks)
+            {
+                try
+                {
+                    callback(result);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+            }
+        }
+
+        /// <summary>
         /// <see cref="_platform"/>에서 알림이 수신될 때 발생하는 이벤트입니다.
         /// </summary>
         private void OnNotificationReceived(IGameNotification deliveredNotification)
@@ -514,8 +739,16 @@ namespace Geuneda.NotificationService
             PendingNotifications.Clear();
             _platform.OnForeground();
 
+            // 앱 안 알림 설정이 꺼져 있으면 OS 에 남은 예약을 지우고 저장된 목록을 되살리지 않는다
+            if (!_notificationsEnabled)
+            {
+                _platform.CancelAllScheduledNotifications();
+
+                return;
+            }
+
             // 저장된 항목 역직렬화
-            var notifications = SerializableNotificationConverter.FromJson(PlayerPrefs.GetString("notifications"));
+            var notifications = SerializableNotificationConverter.FromJson(PlayerPrefs.GetString(NotificationsPrefsKey));
 
             // 포그라운드 전환
             if ((Mode & OperatingMode.ClearOnForegrounding) == OperatingMode.ClearOnForegrounding)

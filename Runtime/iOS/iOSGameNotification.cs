@@ -24,11 +24,17 @@ namespace Geuneda.NotificationService
         /// <remarks>
         /// 내부적으로 문자열로 저장됩니다. 조회 시 정수로 파싱됩니다.
         /// </remarks>
-        /// <value>정수 형태의 식별자, 또는 식별자를 숫자로 파싱할 수 없는 경우 null.</value>
+        /// <value>정수 형태의 식별자. 아직 정하지 않았거나 식별자를 숫자로 파싱할 수 없는 경우 null.</value>
         public int? Id
         {
             get
             {
+                // 아직 ID 를 정하지 않은 새 알림. 서비스가 예약할 때 ID 를 부여한다
+                if (string.IsNullOrEmpty(internalNotification.Identifier))
+                {
+                    return null;
+                }
+
                 if (!int.TryParse(internalNotification.Identifier, out int value))
                 {
                     Debug.LogWarning("Internal iOS notification's identifier isn't a number.");
@@ -154,7 +160,8 @@ namespace Geuneda.NotificationService
         /// </summary>
         public iOSGameNotification()
         {
-            internalNotification = new iOSNotification
+            // 기본 생성자는 현재 시각 해시로 식별자를 만들어 서비스의 단조 증가 ID 를 막으므로, 식별자 없이 만든다
+            internalNotification = new iOSNotification((string)null)
             {
                 ShowInForeground = true // 기본적으로 포그라운드에서 전달
             };
