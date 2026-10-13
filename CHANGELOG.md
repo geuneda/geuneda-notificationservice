@@ -4,7 +4,7 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [Semantic Versioning](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
-## [Unreleased]
+## [0.2.0] - 2026-10-13
 
 **New**:
 - 앱 안 알림 설정 `INotificationService.IsEnabled`(기본값 true, `PlayerPrefs`에 저장)와 `OnEnabledChanged` 이벤트를 추가. 끄면 예약된 알림을 모두 취소하고 표시된 알림을 닫으며 저장해 둔 예약 목록도 지우고, 이후 `ScheduleNotification`은 예약하지 않고 null을 반환합니다. 켜도 지운 알림을 되살리지 않으므로 이벤트에서 다시 예약합니다
