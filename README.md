@@ -10,11 +10,12 @@ Unity 에디터에서 `Window > Package Manager > + > Add package from git URL..
 https://github.com/geuneda/geuneda-notificationservice.git
 ```
 
-또는 `Packages/manifest.json` 에 직접 추가합니다.
+또는 `Packages/manifest.json` 에 직접 추가합니다. core 는 Unity 레지스트리에 없어 자동으로 설치되지 않으므로 함께 추가합니다.
 
 ```json
 {
   "dependencies": {
+    "com.geuneda.core": "https://github.com/geuneda/geuneda-core.git",
     "com.geuneda.notificationservice": "https://github.com/geuneda/geuneda-notificationservice.git"
   }
 }
@@ -194,6 +195,7 @@ var isOn = _notifications.IsEnabled && _notifications.Permission == Notification
 ## 요구 사항과 의존성
 
 - Unity 2021.3 이상 (`package.json` 의 `unity` 필드)
+- `com.geuneda.core` 0.4.0(로거 `ModuleLogger`)
 - `com.unity.mobile.notifications` 2.4.2 이상 (`package.json` 에 선언된 버전. 권한 API 가 이 버전대에 있습니다)
 - 어셈블리: `Geuneda.NotificationService` (네임스페이스 `Geuneda.NotificationService`)
 

@@ -2,11 +2,12 @@
   "name": "com.geuneda.notificationservice",
   "displayName": "Notification Service",
   "author": "geuneda",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "unity": "2021.3",
   "license": "MIT",
   "description": "모바일 기기에 전송되는 알림을 관리하기 위한 서비스 패키지입니다.\n\nUnity의 Mobile Notifications 패키지를 기반으로 로컬 알림 예약, 모든 유형의 알림 삭제 기능을 제공합니다.",
   "dependencies": {
+    "com.geuneda.core": "0.4.0",
     "com.unity.mobile.notifications": "2.4.2"
   },
   "type": "library"

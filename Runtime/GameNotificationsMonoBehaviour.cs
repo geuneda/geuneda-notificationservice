@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Geuneda.Core;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -69,6 +70,7 @@ namespace Geuneda.NotificationService
         
         // 백그라운드로 전환 시 알림이 큐에 추가되기 위해 미래 시점이어야 하는 최소 시간
         private static readonly TimeSpan _minimumNotificationTime = new TimeSpan(0, 0, 2);
+        private static readonly ModuleLogger Logger = new ModuleLogger("Geuneda.NotificationService");
 
         // 예약 목록을 저장하는 PlayerPrefs 키
         internal const string NotificationsPrefsKey = "notifications";
@@ -686,7 +688,7 @@ namespace Geuneda.NotificationService
                 }
                 catch (Exception e)
                 {
-                    Debug.LogException(e);
+                    Logger.Error(e, "A permission request callback threw");
                 }
             }
         }

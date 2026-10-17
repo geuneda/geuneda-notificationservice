@@ -1,7 +1,7 @@
 #if UNITY_IOS
 using System;
+using Geuneda.Core;
 using Unity.Notifications.iOS;
-using UnityEngine;
 using UnityEngine.Assertions;
 
 // ReSharper disable once CheckNamespace
@@ -13,6 +13,8 @@ namespace Geuneda.NotificationService
     /// </summary>
     public class iOSGameNotification : IGameNotification
     {
+        private static readonly ModuleLogger Logger = new ModuleLogger("Geuneda.NotificationService.iOS");
+
         private readonly iOSNotification internalNotification;
 
         /// <summary>
@@ -37,7 +39,7 @@ namespace Geuneda.NotificationService
 
                 if (!int.TryParse(internalNotification.Identifier, out int value))
                 {
-                    Debug.LogWarning("Internal iOS notification's identifier isn't a number.");
+                    Logger.Warning("Internal iOS notification's identifier isn't a number.");
                     return null;
                 }
 

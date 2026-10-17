@@ -140,6 +140,7 @@ namespace Geuneda.NotificationService.Tests
 			manager.RequestPermission(results.Add);
 			_platform.LastPermissionRequest.Complete(NotificationPermission.Denied);
 
+			LogAssert.Expect(LogType.Error, new Regex(@"\[Geuneda\.NotificationService\] A permission request callback threw"));
 			LogAssert.Expect(LogType.Exception, new Regex("boom"));
 			manager.SendMessage("Update");
 

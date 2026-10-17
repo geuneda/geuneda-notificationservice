@@ -4,6 +4,13 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [Semantic Versioning](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [0.3.0] - 2026-10-17
+
+**Changed**:
+- `com.geuneda.core` 0.4.0 에 의존합니다(호환되지 않음). git URL 로 설치한 프로젝트는 `Packages/manifest.json` 에 `"com.geuneda.core": "https://github.com/geuneda/geuneda-core.git"` 를 추가해야 합니다. core 를 넣지 않을 기존 프로젝트는 `#v0.2.0` 에 고정하세요.
+- 로그를 core 의 `ModuleLogger` 로 옮겼습니다. 메시지 앞에 `[Geuneda.NotificationService]`(권한 요청 콜백 예외), `[Geuneda.NotificationService.iOS]`(숫자가 아닌 iOS 알림 식별자)가 붙습니다.
+- 예외만 남기던 곳은 무엇이 실패했는지 적은 Error 줄을 먼저 남기고 예외를 남깁니다. `LogAssert.Expect(LogType.Exception, ...)` 로 이 로그를 기대하던 테스트는 그 앞에 `LogType.Error` 기대를 추가해야 합니다. 해당 위치: `RequestPermission` 콜백 예외.
+
 ## [0.2.0] - 2026-10-13
 
 **New**:
